@@ -24,8 +24,6 @@ typedef struct node {
     struct node *next;
 } node_t;
 
-node_t * head = NULL;
-node_t * end = NULL;
 
 void print_list(node_t * head) {
     node_t *current = head;
@@ -90,30 +88,31 @@ struct organism * add_organism(float energy, float energy_cost, bool alive) {
     return returnobj;
 }
 
-void init_list() {
-    head = (node_t*) malloc(sizeof(node_t)); 
+node_t * init_list() {
+    node_t * head = (node_t*) malloc(sizeof(node_t)); 
     head->data = add_simpleobject(0, 0, 0, 0, 0, 0, 0);
     head->life = NULL;
     head->next = NULL;
+    return head;
 }
 
 
 template<class T> bool signTheSame(T t1, T t2, T t3) 
 {
     return t1 < 0 == t2 < 0 && t1 < 0 == t3 < 0 && t2 < 0 == t3 < 0;
-}
+};
 
 int main()
 {
+    node_t * head = init_list();
+    node_t * end = get_end(head);
     sf::RenderWindow window(sf::VideoMode(700, 700), "works!");
-    init_list();
 
-    end = get_end(head);
     for (int i = 0; i < 500; i++) {
       end = push_end(end, add_simpleobject(5,rand() % 340, rand() % 340,0,0,0,0), add_organism(100, 0.1, true));
     }
 
-          end = push_end(end, add_simpleobject(5, 700, 50, 0, -1, 0, 0), add_organism(100, 0.01, true));
+          end = push_end(end, add_simpleobject(30, 450, 50, 0, -2, 0, 0), add_organism(100, 0.01, true));
 
     while (window.isOpen())
     {
@@ -127,8 +126,9 @@ int main()
         }
 
         //Physics step
-
-        float b_box = 15;
+        
+        //Bounding box for collision detection, make this slightly higher than the sum of the radius of the two largest objects
+        float b_box = 40;
 
         for (node_t * i_obj = head; i_obj; i_obj = i_obj->next)
         {
@@ -152,18 +152,24 @@ int main()
                         } 
                         else
                         {
+                            float ia = i_obj->data->r * i_obj->data->r * M_PI; 
+                            float ja = j_obj->data->r * j_obj->data->r * M_PI; 
+
+                            // How strong should the displacement when an object is inside another be
                             float dsp = 0.02;
+
                             i_obj->data->x += col_vec.x * dsp;
                             i_obj->data->y += col_vec.y * dsp;
                             j_obj->data->x -= col_vec.x * dsp;
                             j_obj->data->y -= col_vec.y * dsp;
                             
-                            float loss = 1;
+                            // Loss detemines how inelastic the collisions will be
+                            float loss = 2;
                             
-                            i_obj->data->vx += fabs(j_obj->data->vx) * col_vec_norm.x / (2 + loss);
-                            i_obj->data->vy += fabs(j_obj->data->vx) * col_vec_norm.y / (2 + loss);
-                            j_obj->data->vx -= fabs(i_obj->data->vx) * col_vec_norm.x / (2 + loss);
-                            j_obj->data->vy -= fabs(i_obj->data->vx) * col_vec_norm.y / (2 + loss);
+                            i_obj->data->vx += fabs(j_obj->data->vx) * col_vec_norm.x / (2 + loss) * (ja / (ja + ia));
+                            i_obj->data->vy += fabs(j_obj->data->vx) * col_vec_norm.y / (2 + loss) * (ja / (ja + ia));
+                            j_obj->data->vx -= fabs(i_obj->data->vx) * col_vec_norm.x / (2 + loss) * (ia / (ja + ia));
+                            j_obj->data->vy -= fabs(i_obj->data->vx) * col_vec_norm.y / (2 + loss) * (ia / (ja + ia));
                         }         
                     }
                 }
@@ -181,13 +187,13 @@ int main()
             if (current->life != NULL) {
                 if (current->life->alive == true) {
                     tempshape.setFillColor(sf::Color::Green);
-                    printf("%g %d ", current->life->energy, current->life->alive);
                     current->life->energy -= current->life->energy_cost;
                     if (current->life->energy < 0) {current->life->alive = false;}
                 }
             }
-            //Friction
-            float mu = 0.0005;
+
+            //Friction mu is friction coefficient
+            float mu = 0.01;
                 current->data->vx -= current->data->vx * mu;
                 current->data->vy -= current->data->vy * mu;
 
@@ -197,6 +203,7 @@ int main()
             current->data->w += current->data->vw;
 
             tempshape.setPosition(current->data->x, current->data->y);
+            tempshape.setOrigin(current->data->r, current->data->r);
             current = current->next;
             window.draw(tempshape);
         }
