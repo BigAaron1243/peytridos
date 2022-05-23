@@ -1,5 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include <math.h>
 
 struct simpleobject {
@@ -13,6 +15,7 @@ struct simpleobject {
 };
 
 struct organism {
+    float energy_base;
     float energy;
     float energy_cost;
     bool alive;
@@ -33,6 +36,16 @@ void print_list(node_t * head) {
         current = current->next;
     }
 
+}
+
+int count_list(node_t * head) {
+    node_t * current = head;
+    int returnvalue = 0;
+    while (current != NULL) {
+        current = current->next;
+        returnvalue++;
+    }
+    return returnvalue;
 }
 
 void push(node_t * head, struct simpleobject * data) {
@@ -78,11 +91,12 @@ struct simpleobject * add_simpleobject(float r, float x, float y, float w, float
     return returnobj;
 }
 
-struct organism * add_organism(float energy, float energy_cost, bool alive) {
+struct organism * add_organism(float energy, float energy_base, float energy_cost, bool alive) {
     struct organism * returnobj = (struct organism *) malloc(sizeof(struct organism));
 
     returnobj->energy = energy;
     returnobj->energy_cost = energy_cost;
+    returnobj->energy_base = energy_base;
     returnobj->alive = alive;
 
     return returnobj;
@@ -96,6 +110,8 @@ node_t * init_list() {
     return head;
 }
 
+int check_collision(p_dist
+
 
 template<class T> bool signTheSame(T t1, T t2, T t3) 
 {
@@ -104,15 +120,21 @@ template<class T> bool signTheSame(T t1, T t2, T t3)
 
 int main()
 {
+    const int w_size = 700;
+    float light_level = 0.1;
+    float sugar[w_size][w_size];
+
     node_t * head = init_list();
     node_t * end = get_end(head);
     sf::RenderWindow window(sf::VideoMode(700, 700), "works!");
 
-    for (int i = 0; i < 500; i++) {
-      end = push_end(end, add_simpleobject(5,rand() % 340, rand() % 340,0,0,0,0), add_organism(100, 0.1, true));
+    for (int i = 0; i < 1; i++) {
+        end = push_end(end, add_simpleobject(2,140 + rand() % 340,140 + rand() % 340,0,0,0,0), add_organism(100, 100, 0.01, true));
+        end->data->vx = 0.01;
     }
 
-          end = push_end(end, add_simpleobject(30, 450, 50, 0, -2, 0, 0), add_organism(100, 0.01, true));
+//          end = push_end(end, add_simpleobject(5, 590, 190, 0, -4, 0, 0), add_organism(100, 0.01, true));
+//
 
     while (window.isOpen())
     {
@@ -128,7 +150,7 @@ int main()
         //Physics step
         
         //Bounding box for collision detection, make this slightly higher than the sum of the radius of the two largest objects
-        float b_box = 40;
+        float b_box = 11;
 
         for (node_t * i_obj = head; i_obj; i_obj = i_obj->next)
         {
@@ -145,23 +167,23 @@ int main()
                         col_vec = {i_obj->data->x - j_obj->data->x, i_obj->data->y - j_obj->data->y};
                         float norm_mod = sqrt(pow(col_vec.x, 2) + pow(col_vec.y, 2));
                         col_vec_norm = {col_vec.x / norm_mod, col_vec.y / norm_mod};
-                        if (pdist == 0)
+                        if (pdist < 0.5)
                         {
-                            i_obj->data->x += (((rand() % 2) * 2) - 1) * 5;
-                            i_obj->data->y += (((rand() % 2) * 2) - 1) * 5;
+                            i_obj->data->x += (((rand() % 2) * 2) - 1);
+                            i_obj->data->y += (((rand() % 2) * 2) - 1);
                         } 
                         else
                         {
-                            float ia = i_obj->data->r * i_obj->data->r * M_PI; 
+                             float ia = i_obj->data->r * i_obj->data->r * M_PI; 
                             float ja = j_obj->data->r * j_obj->data->r * M_PI; 
 
                             // How strong should the displacement when an object is inside another be
-                            float dsp = 0.02;
+                            float dsp = 0.01;
 
-                            i_obj->data->x += col_vec.x * dsp;
-                            i_obj->data->y += col_vec.y * dsp;
-                            j_obj->data->x -= col_vec.x * dsp;
-                            j_obj->data->y -= col_vec.y * dsp;
+                            i_obj->data->x += col_vec.x * dsp * (sqrt(pdist));
+                            i_obj->data->y += col_vec.y * dsp * (sqrt(pdist));
+                            j_obj->data->x -= col_vec.x * dsp * (sqrt(pdist));
+                            j_obj->data->y -= col_vec.y * dsp * (sqrt(pdist));
                             
                             // Loss detemines how inelastic the collisions will be
                             float loss = 2;
@@ -183,11 +205,14 @@ int main()
         {
             sf::CircleShape tempshape(current->data->r);
 
-            tempshape.setFillColor(sf::Color::Red);
             if (current->life != NULL) {
                 if (current->life->alive == true) {
-                    tempshape.setFillColor(sf::Color::Green);
                     current->life->energy -= current->life->energy_cost;
+                    current->life->energy += light_level;
+                    if (current->life->energy > current->life->energy_base * 2) {
+                            end = push_end(end, add_simpleobject(2, current->data->x, current->data->y, 0, 0, 0, 0), add_organism(1, 100, current->life->energy_cost, true));
+                        current->life->energy = 1;
+                    }
                     if (current->life->energy < 0) {current->life->alive = false;}
                 }
             }
@@ -201,6 +226,19 @@ int main()
             current->data->x += current->data->vx;
             current->data->y += current->data->vy;
             current->data->w += current->data->vw;
+
+            if (current->data->x > w_size) {
+                current->data->x = 0;
+            }
+            if (current->data->x < 0) {
+                current->data->x = w_size;
+            }
+            if (current->data->y > w_size) {
+                current->data->y = 0;
+            }
+            if (current->data->y < 0) {
+                current->data->y = w_size;
+            }
 
             tempshape.setPosition(current->data->x, current->data->y);
             tempshape.setOrigin(current->data->r, current->data->r);
