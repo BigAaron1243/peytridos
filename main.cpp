@@ -1,5 +1,7 @@
-#include <SFML/Graphics.hpp>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
@@ -26,6 +28,11 @@ typedef struct node {
     struct organism *life;
     struct node *next;
 } node_t;
+
+typedef struct vector2f {
+    float x;
+    float y;
+} vector2f_t;
 
 
 void print_list(node_t * head) {
@@ -110,12 +117,8 @@ node_t * init_list() {
     return head;
 }
 
-template<class T> bool signTheSame(T t1, T t2, T t3) 
-{
-    return t1 < 0 == t2 < 0 && t1 < 0 == t3 < 0 && t2 < 0 == t3 < 0;
-};
 
-int main()
+int main(int argc, char ** argv)
 {
     const int w_size = 700;
     float light_level = 0.1;
@@ -123,25 +126,20 @@ int main()
 
     node_t * head = init_list();
     node_t * end = get_end(head);
-    sf::RenderWindow window(sf::VideoMode(700, 700), "works!");
 
-    for (int i = 0; i < 1; i++) {
+
+    bool quit = 0;
+
+    for (int i = 0; i < 220; i++) {
         end = push_end(end, add_simpleobject(4,140 + rand() % 340,140 + rand() % 340,0,0,0,0), add_organism(100, 100, 0.01, true));
         end->data->vx = 0.01;
     }
 
     end = push_end(end, add_simpleobject(4, 590, 190, 0, -2, 0, 0), add_organism(100, 100, 0.01, true));
 
-    while (window.isOpen())
+    while (!quit)
     {
-        sf::Event event;
-        while (window.pollEvent(event))
-        {
-            if (event.type == sf::Event::Closed)
-            {
-                window.close();
-            }
-        }
+            
 
         //Physics step
         
@@ -153,16 +151,18 @@ int main()
             for (node_t * j_obj = head; j_obj; j_obj = j_obj->next)
             {
                 if (j_obj->data->y > i_obj->data->y - b_box && j_obj->data->y < i_obj->data->y + b_box && j_obj->data->x > i_obj->data->x - b_box && j_obj->data->x < i_obj->data->x + b_box) {
-                    sf::Vector2f col_vec;
-                    sf::Vector2f col_vec_norm;
+                    vector2f_t col_vec;
+                    vector2f_t col_vec_norm;
                     float psum_r = pow(i_obj->data->r + j_obj->data->r, 2);
                     float pdist = pow(i_obj->data->x - j_obj->data->x, 2) + pow(i_obj->data->y - j_obj->data->y, 2);
                     if (i_obj != j_obj) {
                     }
                     if((i_obj != j_obj) && (pdist < psum_r)) {
-                        col_vec = {i_obj->data->x - j_obj->data->x, i_obj->data->y - j_obj->data->y};
+                        col_vec.x = i_obj->data->x - j_obj->data->x
+                        col_vec.y = i_obj->data->y - j_obj->data->y;
                         float norm_mod = sqrt(pow(col_vec.x, 2) + pow(col_vec.y, 2));
-                        col_vec_norm = {col_vec.x / norm_mod, col_vec.y / norm_mod};
+                        col_vec_norm.x = col_vec.x / norm_mod;
+                        col_vec_norm.y = col_vec.y / norm_mod;
                         if (pdist < 0.01)
                         {
                             i_obj->data->vx += (((rand() % 2) * 2) - 1) * 0.1;
@@ -198,11 +198,9 @@ int main()
         }
 
         //Draw step (i know its stupid but bear with me here, im doing my best
-        window.clear();
         node_t * current = head;
         while (current != NULL)
         {
-            sf::CircleShape tempshape(current->data->r);
 
             if (current->life != NULL) {
                 if (current->life->alive == true) {
@@ -239,12 +237,8 @@ int main()
                 current->data->y = w_size;
             }
 
-            tempshape.setPosition(current->data->x, current->data->y);
-            tempshape.setOrigin(current->data->r, current->data->r);
             current = current->next;
-            window.draw(tempshape);
         }
-        window.display();
     }
     return 0;
 }

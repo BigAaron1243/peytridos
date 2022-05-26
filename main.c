@@ -1,6 +1,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
@@ -116,22 +117,54 @@ node_t * init_list() {
     return head;
 }
 
-template<class T> bool signTheSame(T t1, T t2, T t3) 
-{
-    return t1 < 0 == t2 < 0 && t1 < 0 == t3 < 0 && t2 < 0 == t3 < 0;
-};
+void error_callback(int error, const char * description) {
+    fprintf(stderr, "Error: %s\n", description);
+}
+
+static void close_callback(GLFWwindow * window) {
+    glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
+
+static void key_callback(GLFWwindow * window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+}
+
 
 int main(int argc, char ** argv)
 {
+
+    //GLFW stuff
+    if (!glfwInit()) {
+        printf("GLFW Initialisation Failed");
+    }
+    glfwSetErrorCallback(error_callback);
+    GLFWwindow * window = glfwCreateWindow(1280, 720, "Fishies", NULL, NULL);
+    if (!window) {
+        printf("GLFW Window Creation Failed");
+    }
+    glfwMakeContextCurrent(window);
+    glfwSetKeyCallback(window, key_callback);
+    //glfwSetWindowCloseCallback(window, close_callback);
+    if (!gladLoadGLLoader((GLADloadproc) (glfwGetProcAddress))) {
+        printf("failed to initialise GLAD\n");
+        return -1;
+    }
+    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    glViewport(0, 0, width, height);
+    glfwSwapInterval(1);
+    glClearColor(0.8f, 0.8f, 0.4f, 1.0f);
+
     const int w_size = 700;
     float light_level = 0.1;
     float sugar[w_size][w_size];
 
     node_t * head = init_list();
     node_t * end = get_end(head);
-
-
-    bool quit = 0;
 
     for (int i = 0; i < 220; i++) {
         end = push_end(end, add_simpleobject(4,140 + rand() % 340,140 + rand() % 340,0,0,0,0), add_organism(100, 100, 0.01, true));
@@ -140,9 +173,16 @@ int main(int argc, char ** argv)
 
     end = push_end(end, add_simpleobject(4, 590, 190, 0, -2, 0, 0), add_organism(100, 100, 0.01, true));
 
-    while (!quit)
+    while (!glfwWindowShouldClose(window))
     {
-            
+        //Draw step
+        glfwPollEvents();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+
+
+        glfwSwapBuffers(window);
 
         //Physics step
         
@@ -161,9 +201,11 @@ int main(int argc, char ** argv)
                     if (i_obj != j_obj) {
                     }
                     if((i_obj != j_obj) && (pdist < psum_r)) {
-                        col_vec = {i_obj->data->x - j_obj->data->x, i_obj->data->y - j_obj->data->y};
+                        col_vec.x = i_obj->data->x - j_obj->data->x;
+                        col_vec.y = i_obj->data->y - j_obj->data->y;
                         float norm_mod = sqrt(pow(col_vec.x, 2) + pow(col_vec.y, 2));
-                        col_vec_norm = {col_vec.x / norm_mod, col_vec.y / norm_mod};
+                        col_vec_norm.x = col_vec.x / norm_mod;
+                        col_vec_norm.y = col_vec.y / norm_mod;
                         if (pdist < 0.01)
                         {
                             i_obj->data->vx += (((rand() % 2) * 2) - 1) * 0.1;
@@ -241,5 +283,7 @@ int main(int argc, char ** argv)
             current = current->next;
         }
     }
+    glfwDestroyWindow(window);
+    glfwTerminate();
     return 0;
 }

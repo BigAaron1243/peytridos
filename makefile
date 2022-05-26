@@ -1,3 +1,3 @@
-main: main.cpp
-	g++ -o out main.cpp -ISFML -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -Wall
+main: main.c
+	gcc -o out main.c -lglfw -lGL -I"./glad/include" ./glad/src/glad.c -Wall -lm
 	 
