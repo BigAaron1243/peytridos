@@ -14,6 +14,7 @@ struct simpleobject {
     float vx;
     float vy;
     float vw;
+    float * vertex_buffer;
 };
 
 struct organism {
@@ -84,6 +85,7 @@ node_t * push_end(node_t * end, struct simpleobject * data, struct organism * li
 }
 
 
+
 struct simpleobject * add_simpleobject(float r, float x, float y, float w, float vx, float vy, float vw) {
     struct simpleobject *returnobj = (struct simpleobject*) malloc(sizeof(struct simpleobject));
 
@@ -94,6 +96,8 @@ struct simpleobject * add_simpleobject(float r, float x, float y, float w, float
     returnobj->vx = vx;
     returnobj->vy = vy;
     returnobj->vw = vw;
+    float vertex_buffer[6] = {-0.866 * r, -0.5 * r, 0.866 * r, -0.5 * r, 0 * r, 1 * r};
+    returnobj->vertex_buffer = vertex_buffer;
 
     return returnobj;
 }
@@ -134,6 +138,9 @@ static void key_callback(GLFWwindow * window, int key, int scancode, int action,
 
 int main(int argc, char ** argv)
 {
+
+    //Define the triangle we will use to draw the shape
+    float tri_mask[6] = {-0.866, -0.5, 0.866, 0.5, 0.0, 1.0};
 
     //GLFW stuff
     if (!glfwInit()) {
@@ -194,8 +201,7 @@ int main(int argc, char ** argv)
             for (node_t * j_obj = head; j_obj; j_obj = j_obj->next)
             {
                 if (j_obj->data->y > i_obj->data->y - b_box && j_obj->data->y < i_obj->data->y + b_box && j_obj->data->x > i_obj->data->x - b_box && j_obj->data->x < i_obj->data->x + b_box) {
-                    vector2f_t col_vec;
-                    vector2f_t col_vec_norm;
+                    vector2f_t col_vec, col_vec_norm;
                     float psum_r = pow(i_obj->data->r + j_obj->data->r, 2);
                     float pdist = pow(i_obj->data->x - j_obj->data->x, 2) + pow(i_obj->data->y - j_obj->data->y, 2);
                     if (i_obj != j_obj) {
@@ -259,8 +265,8 @@ int main(int argc, char ** argv)
 
             //Friction mu is friction coefficient
             float mu = 0.01;
-                current->data->vx -= current->data->vx * mu;
-                current->data->vy -= current->data->vy * mu;
+            current->data->vx -= current->data->vx * mu;
+            current->data->vy -= current->data->vy * mu;
 
             //Velocity application
             current->data->x += current->data->vx;
@@ -279,6 +285,8 @@ int main(int argc, char ** argv)
             if (current->data->y < 0) {
                 current->data->y = w_size;
             }
+
+            float vertex_buffer[6] = {tri_mask[0] * current->data->r, tri_mask[1] * current->data->r, tri_mask[2] * current->data->r, tri_mask[3] * current->data->r, tri_mask[4] * current->data->r, tri_mask[5] * current->data->r};
 
             current = current->next;
         }
