@@ -141,7 +141,11 @@ char * fragmentSource = "#version 150 core\nout vec4 outColor;\nvoid main() {out
 
 int main(int argc, char ** argv)
 {
-
+    float vertices[] = {
+        0.0f,  0.1f, // Vertex 1 (X, Y)
+        0.1f, -0.1f, // Vertex 2 (X, Y)
+        -0.1f, -0.1f  // Vertex 3 (X, Y)
+    };
    
     //Define the triangle we will use to draw the shape
     float tri_mask[6] = {-0.866, -0.5, 0.866, 0.5, 0.0, 1.0};
@@ -169,6 +173,15 @@ int main(int argc, char ** argv)
     glViewport(0, 0, width, height);
     glfwSwapInterval(1);
     glClearColor(0.8f, 0.8f, 0.4f, 1.0f);
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
   
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -186,19 +199,25 @@ int main(int argc, char ** argv)
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
     printf("%u\n", status);
 
+    GLuint shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+
+    glBindFragDataLocation(shaderProgram, 0, "outColor");
+
+    glLinkProgram(shaderProgram);
+    glUseProgram(shaderProgram);
+
+    GLuint posAttrib = glGetAttribLocation(shaderProgram, "position");
+    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(posAttrib);
 
 
-    float vertices[] = {
-        0.0f,  0.5f, // Vertex 1 (X, Y)
-        0.5f, -0.5f, // Vertex 2 (X, Y)
-        -0.5f, -0.5f  // Vertex 3 (X, Y)
-    };
+
+
                                 
 
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+
 
     const int w_size = 700;
     float light_level = 0.1;
@@ -221,6 +240,7 @@ int main(int argc, char ** argv)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
 
         glfwSwapBuffers(window);
