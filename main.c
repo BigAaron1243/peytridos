@@ -135,10 +135,14 @@ static void key_callback(GLFWwindow * window, int key, int scancode, int action,
     }
 }
 
+char * vertexSource = "#version 150 core\nin vec2 position;\nvoid main() {\ngl_Position= vec4(position,0.0,1.0);\n}";
+
+char * fragmentSource = "#version 150 core\nout vec4 outColor;\nvoid main() {outColor = vec4(1.0, 1.0, 1.0, 1.0);}";
 
 int main(int argc, char ** argv)
 {
 
+   
     //Define the triangle we will use to draw the shape
     float tri_mask[6] = {-0.866, -0.5, 0.866, 0.5, 0.0, 1.0};
 
@@ -165,6 +169,36 @@ int main(int argc, char ** argv)
     glViewport(0, 0, width, height);
     glfwSwapInterval(1);
     glClearColor(0.8f, 0.8f, 0.4f, 1.0f);
+  
+    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+    glShaderSource(vertexShader, 1, &vertexSource, NULL);
+    glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
+
+    glCompileShader(vertexShader);
+    glCompileShader(fragmentShader);
+
+    GLuint status;
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
+    printf("%u\n", status);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &status);
+    printf("%u\n", status);
+
+
+
+    float vertices[] = {
+        0.0f,  0.5f, // Vertex 1 (X, Y)
+        0.5f, -0.5f, // Vertex 2 (X, Y)
+        -0.5f, -0.5f  // Vertex 3 (X, Y)
+    };
+                                
+
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
     const int w_size = 700;
     float light_level = 0.1;
@@ -286,7 +320,6 @@ int main(int argc, char ** argv)
                 current->data->y = w_size;
             }
 
-            float vertex_buffer[6] = {tri_mask[0] * current->data->r, tri_mask[1] * current->data->r, tri_mask[2] * current->data->r, tri_mask[3] * current->data->r, tri_mask[4] * current->data->r, tri_mask[5] * current->data->r};
 
             current = current->next;
         }
