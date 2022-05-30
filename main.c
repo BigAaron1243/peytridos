@@ -135,16 +135,17 @@ static void key_callback(GLFWwindow * window, int key, int scancode, int action,
     }
 }
 
-char * vertexSource = "#version 150 core\nin vec2 position;\nvoid main() {\ngl_Position= vec4(position,0.0,1.0);\n}";
+char * vertexSource = "#version 150 core\nin vec2 position;in vec3 color;out vec3 Color;void main() {Color = color;gl_Position= vec4(position,0.0,1.0);}";
 
-char * fragmentSource = "#version 150 core\nout vec4 outColor;\nvoid main() {outColor = vec4(1.0, 1.0, 1.0, 1.0);}";
+
+char * fragmentSource = "#version 150 core\nout vec4 outColor;in vec3 Color;void main() {outColor = vec4(Color, 1.0);}";
 
 int main(int argc, char ** argv)
 {
     float vertices[] = {
-        0.0f,  0.1f, // Vertex 1 (X, Y)
-        0.1f, -0.1f, // Vertex 2 (X, Y)
-        -0.1f, -0.1f  // Vertex 3 (X, Y)
+        0.0f,  0.1f, 1.0f, 0.0f, 0.0f, // Vertex 1 (X, Y)
+        0.1f, -0.1f, 0.0f, 1.0f, 0.0f,// Vertex 2 (X, Y)
+        -0.1f, -0.1f, 0.0f, 0.0f, 1.0f  // Vertex 3 (X, Y)
     };
    
     //Define the triangle we will use to draw the shape
@@ -172,7 +173,7 @@ int main(int argc, char ** argv)
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
     glfwSwapInterval(1);
-    glClearColor(0.8f, 0.8f, 0.4f, 1.0f);
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -209,15 +210,12 @@ int main(int argc, char ** argv)
     glUseProgram(shaderProgram);
 
     GLuint posAttrib = glGetAttribLocation(shaderProgram, "position");
-    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(posAttrib);
+    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), 0);
 
-
-
-
-                                
-
-
+    GLuint colAttrib = glGetAttribLocation(shaderProgram, "color");
+    glEnableVertexAttribArray(colAttrib);
+    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(2*sizeof(float)));
 
     const int w_size = 700;
     float light_level = 0.1;
