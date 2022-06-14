@@ -145,12 +145,11 @@ int main(int argc, char ** argv)
     float vertices[] = {
         0.0f,  0.1f, 1.0f, 0.0f, 0.0f, // Vertex 1 (X, Y)
         0.1f, -0.1f, 0.0f, 1.0f, 0.0f,// Vertex 2 (X, Y)
-        -0.1f, -0.1f, 0.0f, 0.0f, 1.0f  // Vertex 3 (X, Y)
+        -0.1f, -0.1f, 0.0f, 0.0f, 1.0f,  // Vertex 3 (X, Y)
+        0.4f,  0.5f, 1.4f, 0.0f, 0.0f, // Vertex 1 (X, Y)
+        0.5f, 0.3f, 0.4f, 1.0f, 0.0f,// Vertex 2 (X, Y)
+        0.3f, 0.3f, 0.4f, 0.0f, 1.0f  // Vertex 3 (X, Y)
     };
-
-    const float *vertptr = vertices;
-    float *vertcpy = malloc(15 * sizeof(float));
-    memcpy(vertcpy, vertptr, 15*sizeof(float));
 
    
     //Define the triangle we will use to draw the shape
@@ -186,13 +185,8 @@ int main(int argc, char ** argv)
 
     GLuint vbo;
     glGenBuffers(1, &vbo);
-    for (size_t i = 0; i < 15; i+=5) {
-        vertices[i] += 0.1;
-        vertices[i + 1] += 0.1;
-        vertices[i + 2] += 0.1;
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
-    }
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
   
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -246,9 +240,11 @@ int main(int argc, char ** argv)
         //Draw step
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
 
         glfwSwapBuffers(window);
