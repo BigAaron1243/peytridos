@@ -147,6 +147,11 @@ int main(int argc, char ** argv)
         0.1f, -0.1f, 0.0f, 1.0f, 0.0f,// Vertex 2 (X, Y)
         -0.1f, -0.1f, 0.0f, 0.0f, 1.0f  // Vertex 3 (X, Y)
     };
+
+    const float *vertptr = vertices;
+    float *vertcpy = malloc(15 * sizeof(float));
+    memcpy(vertcpy, vertptr, 15*sizeof(float));
+
    
     //Define the triangle we will use to draw the shape
     float tri_mask[6] = {-0.866, -0.5, 0.866, 0.5, 0.0, 1.0};
@@ -181,8 +186,13 @@ int main(int argc, char ** argv)
 
     GLuint vbo;
     glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+    for (size_t i = 0; i < 15; i+=5) {
+        vertices[i] += 0.1;
+        vertices[i + 1] += 0.1;
+        vertices[i + 2] += 0.1;
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+    }
   
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
