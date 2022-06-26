@@ -76,6 +76,7 @@ node_t * get_end(node_t * head) {
     return current;
 }
 
+
 node_t * push_end(node_t * end, struct simpleobject * data, struct organism * life) {
     end->next = (node_t *) malloc(sizeof(node_t));
     end->next->data = data;
@@ -135,10 +136,10 @@ static void key_callback(GLFWwindow * window, int key, int scancode, int action,
     }
 }
 
-char * vertexSource = "#version 150 core\nin vec2 position;in vec3 color;out vec3 Color;void main() {Color = color;gl_Position= vec4(position,0.0,1.0);}";
+char * vertexSource = "#version 150 core\nin vec2 position;void main() {gl_Position= vec4(position,0.0,1.0);}";
 
 
-char * fragmentSource = "#version 150 core\nout vec4 outColor;in vec3 Color;void main() {outColor = vec4(Color, 1.0);}";
+char * fragmentSource = "#version 150 core\nout vec4 outColor;void main() {outColor = vec4(1.0, 1.0, 1.0, 1.0);}";
 
 int main(int argc, char ** argv)
 {
@@ -149,6 +150,10 @@ int main(int argc, char ** argv)
         0.4f,  0.5f, 1.4f, 0.0f, 0.0f, // Vertex 1 (X, Y)
         0.5f, 0.3f, 0.4f, 1.0f, 0.0f,// Vertex 2 (X, Y)
         0.3f, 0.3f, 0.4f, 0.0f, 1.0f  // Vertex 3 (X, Y)
+    };
+
+    float vert[] = {
+        0.0f, 0.01f, 0.1f, -0.1f, -0.1f, -0.1f, 0.4f, 0.5f, 0.5f, 0.3f, 0.3f, 0.3f
     };
 
    
@@ -185,9 +190,8 @@ int main(int argc, char ** argv)
 
     GLuint vbo;
     glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
-  
+    
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -215,11 +219,11 @@ int main(int argc, char ** argv)
 
     GLuint posAttrib = glGetAttribLocation(shaderProgram, "position");
     glEnableVertexAttribArray(posAttrib);
-    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), 0);
+    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
-    GLuint colAttrib = glGetAttribLocation(shaderProgram, "color");
-    glEnableVertexAttribArray(colAttrib);
-    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(2*sizeof(float)));
+ //   GLuint colAttrib = glGetAttribLocation(shaderProgram, "color");
+ //   glEnableVertexAttribArray(colAttrib);
+ //   glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(2*sizeof(float)));
 
     const int w_size = 700;
     float light_level = 0.1;
@@ -228,23 +232,23 @@ int main(int argc, char ** argv)
     node_t * head = init_list();
     node_t * end = get_end(head);
 
-    for (int i = 0; i < 220; i++) {
-        end = push_end(end, add_simpleobject(4,140 + rand() % 340,140 + rand() % 340,0,0,0,0), add_organism(100, 100, 0.01, true));
+    for (int i = 0; i < 10; i++) {
+        end = push_end(end, add_simpleobject(4,140 + rand() % 340,140 + rand() % 340,0,5,0,0), add_organism(100, 100, 0.01, true));
         end->data->vx = 0.01;
     }
 
-    end = push_end(end, add_simpleobject(4, 590, 190, 0, -2, 0, 0), add_organism(100, 100, 0.01, true));
+    end = push_end(end, add_simpleobject(5, 590, 190, 0, -6, 0, 0), add_organism(100, 100, 0.01, true));
+
+    int count = count_list(head);
 
     while (!glfwWindowShouldClose(window))
     {
         //Draw step
         glfwPollEvents();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
 
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawArrays(GL_TRIANGLES, 0, count * 3);
 
 
         glfwSwapBuffers(window);
@@ -304,10 +308,21 @@ int main(int argc, char ** argv)
             }
         }
 
-        //Draw step (i know its stupid but bear with me here, im doing my best
+        //Draw & apply velocities step (i know its stupid but bear with me here, im doing my best
         node_t * current = head;
+        float printlist[count*6];
+        int icnt = 0;
         while (current != NULL)
         {
+
+
+            printlist[icnt]   =current->data->x / 700.f + 0.01;
+            printlist[icnt+1] =current->data->y / 700.f - 0.01;
+            printlist[icnt+2] =current->data->x / 700.f - 0.01;
+            printlist[icnt+3] =current->data->y / 700.f - 0.01;
+            printlist[icnt+4] =current->data->x / 700.f + 0;
+            printlist[icnt+5] =current->data->y / 700.f + 0.01;
+            icnt += 6;
 
             if (current->life != NULL) {
                 if (current->life->alive == true) {
@@ -315,6 +330,7 @@ int main(int argc, char ** argv)
                     current->life->energy += light_level;
                     if (current->life->energy > current->life->energy_base * 2) {
                         end = push_end(end, add_simpleobject(4, current->data->x, current->data->y, 0, 0, 0, 0), add_organism(1, 100, current->life->energy_cost, true));
+                        count++;
                         current->life->energy = 1;
                     }
                 }
@@ -347,6 +363,9 @@ int main(int argc, char ** argv)
 
             current = current->next;
         }
+    
+        glBufferData(GL_ARRAY_BUFFER, sizeof(printlist), printlist, GL_DYNAMIC_DRAW);
+
     }
     glfwDestroyWindow(window);
     glfwTerminate();
